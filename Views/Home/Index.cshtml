@@ -1,0 +1,41 @@
+@model MyWebApp.Models.TextInputModel
+@{
+    ViewData["Title"] = "Home";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container">
+    <h1>My Web App</h1>
+    <p class="subtitle">Enter your text below — add more functionality as you go.</p>
+
+    <form method="post">
+        <div class="form-group">
+            <label for="Content">Text Input</label>
+            <textarea id="Content"
+                      name="Content"
+                      rows="8"
+                      placeholder="Type or paste your text here...">@Model.Content</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="SecondContent">Second Text Input</label>
+            <textarea id="SecondContent"
+                      name="SecondContent"
+                      rows="8"
+                      placeholder="Type or paste your text here...">@Model.SecondContent</textarea>
+        </div>
+
+        <div class="actions">
+            <button type="submit">Submit</button>
+            <button type="reset" class="secondary">Clear</button>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrEmpty(Model.Result))
+    {
+        <div class="result">
+            <h2>Result</h2>
+            <p>@Model.Result</p>
+        </div>
+    }
+</div>
