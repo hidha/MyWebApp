@@ -4,30 +4,30 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container">
-    <h1>My Web App</h1>
-    <p class="subtitle">Enter your text below — add more functionality as you go.</p>
+<div class="container" id="app">
+    <h1>WorkShop - 2</h1>
+    <p class="subtitle">Tools to automate manual tasks</p>
 
     <form method="post">
         <div class="form-group">
             <label for="Content">Text Input</label>
-            <textarea id="Content"
-                      name="Content"
+            <textarea id="input"
+                      name="input"
                       rows="8"
                       placeholder="Type or paste your text here...">@Model.Content</textarea>
         </div>
 
         <div class="form-group">
-            <label for="SecondContent">Second Text Input</label>
-            <textarea id="SecondContent"
-                      name="SecondContent"
+            <label for="SecondContent">Output</label>
+            <textarea id="output"
+                      name="output"
                       rows="8"
                       placeholder="Type or paste your text here...">@Model.SecondContent</textarea>
         </div>
 
         <div class="actions">
             <button type="submit">Submit</button>
-            <button type="reset" class="secondary">Clear</button>
+            <button type="reset" class="secondary" id="clear" v-on:click="onClearClick">Clear</button>
         </div>
     </form>
 
@@ -39,3 +39,16 @@
         </div>
     }
 </div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        methods: {
+            onClearClick: function() {
+                alert('Clear button clicked!');
+                $('#input').val('');
+                $('#output').val('');
+            }
+        }
+    });
+</script>

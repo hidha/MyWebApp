@@ -1,0 +1,118 @@
+@model MyWebApp.Models.ExcelInputModel
+@{
+    ViewData["Title"] = "Excel Reader";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container" id="excelReader">
+    <h1>Excel Reader</h1>
+    <p class="subtitle">Upload and read data from Excel files</p>
+
+    <div>
+        <div class="form-group">
+            <label for="excelFile">Upload Excel File</label>
+            <input type="file" 
+                   id="excelFile" 
+                   name="excelFile" 
+                   accept=".xlsx,.xls,.csv" 
+                   required />
+            <small>Supported formats: .xlsx, .xls, .csv</small>
+        </div>
+
+        <div class="form-group">
+            <label for="SecondContent">Output</label>
+            <textarea id="output"
+                      name="output"
+                      rows="8"
+                      placeholder="Type or paste your text here..."></textarea>
+        </div>
+
+        <div class="actions">
+            <button id="submit" v-on:click="onSubmitClick">Read File</button>
+            <button type="reset" class="secondary" id="clear" v-on:click="onClearClick">Clear</button>
+        </div>
+    </div>
+
+    @* @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="error">
+            <h3>Error</h3>
+            <p>@Model.ErrorMessage</p>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.Status))
+    {
+        <div class="success">
+            <h3>Status</h3>
+            <p>@Model.Status</p>
+        </div>
+    }
+
+    @if (Model.Data != null && Model.Data.Count > 0)
+    {
+        <div class="result">
+            <h2>Excel Data</h2>
+            <table>
+                <thead>
+                    <tr>
+                        @foreach (var header in Model.ColumnHeaders ?? new List<string>())
+                        {
+                            <th>@header</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Data)
+                    {
+                        <tr>
+                            @foreach (var header in Model.ColumnHeaders ?? new List<string>())
+                            {
+                                <td>@(row.ContainsKey(header) ? row[header] : "")</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    } *@
+</div>
+
+<script>
+    var excelReader = new Vue({
+        el: '#excelReader',
+        methods: {
+            onClearClick: function() {
+                $('#excelFile').val('');
+                $('#output').val('');
+                
+            },
+            onSubmitClick: function() {
+                var fileInput = document.getElementById('excelFile');
+                var fileName = fileInput.files.length > 0 ? fileInput.files[0].name : '';
+                
+                if (!fileName) {
+                    alert('Please select a file first');
+                    return;
+                }
+                
+                $.ajax({
+                    url: "ReadExcel",
+                    type: "POST",
+                    data: { fileName: fileName },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            $('#output').val(JSON.stringify(response.data, null, 2));
+                        } else {
+                            alert('Error: ' + response.error);
+                        }
+                    },
+                    error: function(error) {
+                        alert('An error occurred while processing the file.');
+                    }
+                })
+            }
+        }
+    });
+</script>
