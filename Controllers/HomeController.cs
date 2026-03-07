@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MyWebApp.Models;
+using OfficeOpenXml;
 
 namespace MyWebApp.Controllers;
 
@@ -92,9 +93,117 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public ActionResult ReadExcel(string fileName)
+    public IActionResult GetSheetNames(IFormFile file)
     {
-        var result = new { success = true, data = "ReadExcel result, FileName: " + fileName };
-        return Json(result);
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded");
+
+        using var stream = new MemoryStream();
+        file.CopyTo(stream);
+
+        using var package = new ExcelPackage(stream);
+
+        // Collect sheet names
+        var sheetNames = package.Workbook.Worksheets
+            .Select(ws => ws.Name)
+            .ToList();
+
+        return Ok(sheetNames);
     }
+
+    /// <summary>
+    /// Reads an uploaded Excel file and returns its content as JSON.
+    /// </summary>
+    /// <param name="file"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public ActionResult ReadExcel(IFormFile file, string sheetName, string outputType)
+    {
+        // var result = new { success = true, data = "ReadExcel result, FileName: " + fileName };
+        // return Json(result);
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest("No file uploaded.");
+        }
+
+        using var stream = new MemoryStream();
+        file.CopyTo(stream);
+        using var package = new ExcelPackage(stream);
+        var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+        if (worksheet == null)
+        {
+            return BadRequest("No worksheet found in the uploaded file.");
+        }
+
+        var twoRowsData = ReadTwoRowsAsOne(worksheet);
+        // var data = new List<Dictionary<string, string>>();
+        // var headers = new List<string>();
+
+        // for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
+        // {
+        //     headers.Add(worksheet.Cells[1, col].Text);
+        // }
+
+        // for (int row = 2; row <= worksheet.Dimension.End.Row; row++)
+        // {
+        //     var rowData = new Dictionary<string, string>();
+        //     for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
+        //     {
+        //         rowData[headers[col - 1]] = worksheet.Cells[row, col].Text;
+        //     }
+        //     data.Add(rowData);
+        // }
+
+
+        // var result = new { success = true, data };
+        return twoRowsData != null
+            ? Json(new { success = true, data = twoRowsData })
+            : Json(new { success = false, message = "Failed to read Excel file." });
+    }
+
+    public List<string> ReadTwoRowsAsOne(ExcelWorksheet ws)
+    {
+        var result = new List<string>();
+
+        int totalRows = ws.Dimension.Rows;
+        int totalCols = ws.Dimension.Columns;
+
+        // Read header row once
+        var header = new List<string>();
+        for (int c = 1; c <= totalCols; c++)
+        {
+            header.Add(ws.Cells[1, c].Text);
+        }        
+
+        var headerLine = new List<string>();
+        headerLine.AddRange(header);
+        headerLine.AddRange(header);
+
+        result.Add(string.Join(",", headerLine));
+
+        for (int r = 2; r <= totalRows; r += 2)   // step by 2
+        {
+            var combined = new List<string>();
+
+            // First row
+            for (int c = 1; c <= totalCols; c++)
+            {
+                combined.Add(ws.Cells[r, c].Text);
+            }
+
+            // Second row (only if it exists)
+            if (r + 1 <= totalRows)
+            {
+                for (int c = 1; c <= totalCols; c++)
+                {
+                    combined.Add(ws.Cells[r + 1, c].Text);
+                }
+            }
+            // Convert combined row to CSV string
+            string csvLine = string.Join(",", combined);
+            result.Add(csvLine);
+        }
+
+        return result;
+    }    
 }

@@ -1,4 +1,8 @@
+using OfficeOpenXml;
+
 var builder = WebApplication.CreateBuilder(args);
+// set EPPlus license context globally
+ExcelPackage.License.SetNonCommercialPersonal("Hidha Kaleelurrahman");
 
 builder.Services.AddControllersWithViews();
 

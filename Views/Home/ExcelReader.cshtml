@@ -4,6 +4,32 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+<style>
+.radio-button {
+    padding: 8px 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    background: #f7f7f7;
+    transition: 0.2s;
+}
+
+.radio-button:hover {
+    background: #e9e9e9;
+}
+
+.radio-button input {
+    display: none; /* hide actual radio */
+}
+
+.radio-button.selected {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+</style>
+
 <div class="container" id="excelReader">
     <h1>Excel Reader</h1>
     <p class="subtitle">Upload and read data from Excel files</p>
@@ -15,9 +41,35 @@
                    id="excelFile" 
                    name="excelFile" 
                    accept=".xlsx,.xls,.csv" 
+                   v-on:change="onFileSelected"
                    required />
             <small>Supported formats: .xlsx, .xls, .csv</small>
         </div>
+
+        <div>
+            <label for="sheetName">Sheet Name</label>
+            <input id="sheetName"
+                   name="sheetName"
+                   type="text"
+                   placeholder="Type or paste sheet name here..."></input>
+        </div>
+
+            <div id="sheetButtons" style="display:flex; gap:10px;">
+                <label class="radio-button">
+                    <input type="radio" name="sheet" value="JSON" v-on:change="onOutputTypeChange">
+                    JSON
+                </label>
+
+                <label class="radio-button">
+                    <input type="radio" name="sheet" value="CSV" v-on:change="onOutputTypeChange">
+                    CSV
+                </label>
+
+                <label class="radio-button">
+                    <input type="radio" name="sheet" value="Other" v-on:change="onOutputTypeChange">
+                    Other
+                </label>
+            </div>
 
         <div class="form-group">
             <label for="SecondContent">Output</label>
@@ -81,22 +133,48 @@
 <script>
     var excelReader = new Vue({
         el: '#excelReader',
+        data: {
+            outputType: ''
+        },
         methods: {
+            onFileSelected: function(event) {
+                let file = $('#excelFile')[0].files[0];
+
+                if (!file) return;
+
+                let formData = new FormData();
+                formData.append("file", file);
+
+                $.ajax({
+                    url: "GetSheetNames",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (sheetNames) {
+                        console.log("Sheets:", sheetNames);
+                    }
+                });
+            },
+            onOutputTypeChange: function(event) {
+                document.querySelectorAll(".radio-button").forEach(btn => btn.classList.remove("selected"));
+                event.target.closest(".radio-button").classList.add("selected");
+                this.outputType = event.target.value;
+            },
             onClearClick: function() {
                 $('#excelFile').val('');
                 $('#output').val('');
-                
             },
             onSubmitClick: function() {
-                var fileInput = document.getElementById('excelFile');
-                var fileName = fileInput.files.length > 0 ? fileInput.files[0].name : '';
+                var fileInput = $('#excelFile');
+                var fileName = fileInput.length > 0 ? fileInput[0].name : '';
                 
                 if (!fileName) {
                     alert('Please select a file first');
                     return;
                 }
                 
-                $.ajax({
+                @* $.ajax({
                     url: "ReadExcel",
                     type: "POST",
                     data: { fileName: fileName },
@@ -111,7 +189,37 @@
                     error: function(error) {
                         alert('An error occurred while processing the file.');
                     }
-                })
+                }) *@
+
+                var fileInput = $('#excelFile')[0];
+                if (fileInput.files.length === 0) {
+                    alert('Please select a file first');
+                    return;
+                }
+
+                var formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('sheetName', $('#sheetName').val());
+                formData.append('outputType', this.outputType);
+                $.ajax({
+                    url: 'ReadExcel',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        if (response.success) {
+                            let cleaned = '';
+                            response.data.forEach(line => cleaned += line + '\n');
+                            $('#output').val(cleaned);
+                        } else {
+                            alert('Error: ' + response.error);
+                        }
+                    },
+                    error: function(error) {
+                        alert('An error occurred while processing the file.');
+                    }
+                });
             }
         }
     });
