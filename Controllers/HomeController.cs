@@ -15,15 +15,15 @@ public class HomeController : Controller
     [HttpPost]
     public IActionResult Index(TextInputModel model)
     {
-        if (!string.IsNullOrWhiteSpace(model.Content))
+        if (!string.IsNullOrWhiteSpace(model.input))
         {
-            var lines = model.Content
+            var lines = model.input
                 .Split('\n')
                 .Select(line => line.Trim())
                 .Where(line => !string.IsNullOrEmpty(line))
                 .Select(line => $"'{line.Replace("'", "\\'")}'");
 
-            model.SecondContent = $"({string.Join(",", lines)})";
+            model.output = $"({string.Join(",", lines)})";
         }
 
         return View(model);
@@ -129,7 +129,15 @@ public class HomeController : Controller
         using var stream = new MemoryStream();
         file.CopyTo(stream);
         using var package = new ExcelPackage(stream);
-        var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+        ExcelWorksheet? worksheet = null;
+        if (String.IsNullOrEmpty(sheetName)) {
+            worksheet = package.Workbook.Worksheets.FirstOrDefault();
+        }
+        else
+        {
+            worksheet = package.Workbook.Worksheets[sheetName];
+        }
+        
         if (worksheet == null)
         {
             return BadRequest("No worksheet found in the uploaded file.");
